@@ -25,7 +25,7 @@ dns02\t\tA\t192.168.255.3\n\
 web01\t\tA\t192.168.255.4\n\
 web02\t\tA\t192.168.255.5\n\
 db01\t\tA\t192.168.255.6\n\
-db02\t\tA\t192.168.255.7\n" > /var/named/named.empty
+db02\t\tA\t192.168.255.7\n" > /var/named/*sample.jp.zone*
 }
 
 function echo-named.conf(){
@@ -36,17 +36,19 @@ echo -e "zone \"sample.jp\" IN {\n\
 }
 
 function cp-echo(){
+  if [ "$1" = "named.empty" ] ; then
+  echo-zone
+  cat /var/named/engineer.jp.zone
+  sleep 20
+  else
   cp -p "$1" "$1".org
   ls -l "$1"*
   sleep 10
-  if [ "$1" = "named.empty" ] ; then
-  echo-zone
-  else
   echo-named.conf
   vi "$1"
-  fi
   diff "$1".org "$1"
   sleep 20
+  fi
 }
 
 # ホスト名設定、タイムゾーン設定
@@ -68,15 +70,11 @@ function cp-echo(){
 
 #dnsの設定
  cd /etc || exit
- cp-echo named.conf named.conf.org
- ls -l named.conf*
- sleep 5
+ cp-echo named.conf
 
 #ZONEの設定
  cd /var/named || exit
  cp-echo named.empty
- mv named.empty engineer.jp.zone
- mv named.empty.org named.empty
  ls -l named.empty
  ls -l sample.jp.zone
  sleep 10
@@ -111,6 +109,7 @@ function cp-echo(){
  nmcli c mod enp0s3 +ipv4.dns 192.168.1.***
  nmcli c mod enp0s3 +ipv4.dns 8.8.8.8,8.8.4.4
  #nmcli c down enp0s3 && nmcli c up enp0s3
+ systemctl restart named-chroot
 
 #名前解決とリゾルバの確認
  sleep 10
